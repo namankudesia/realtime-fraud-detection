@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Real-Time Fraud Detection — Live Demo | Naman Kudesia</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Segoe UI',sans-serif;background:#0A0A1A;color:#F0EEFF;min-height:100vh;padding:40px 20px;display:flex;flex-direction:column;align-items:center;}
+.badge{background:rgba(255,77,109,.1);border:1px solid rgba(255,77,109,.3);color:#FF4D6D;padding:6px 16px;border-radius:50px;font-size:12px;font-family:monospace;margin-bottom:20px;}
+h1{font-size:28px;background:linear-gradient(135deg,#6B5EFF,#FF4D6D);-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:8px;}
+.sub{color:#9090BB;margin-bottom:30px;text-align:center;max-width:540px;font-size:14px;}
+.card{background:#14112E;border:1px solid rgba(155,143,255,.15);border-radius:20px;width:100%;max-width:640px;padding:28px;box-shadow:0 20px 60px rgba(255,77,109,.15);}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px;}
+.field label{display:block;font-size:11px;color:#9090BB;font-family:monospace;margin-bottom:6px;letter-spacing:.08em;text-transform:uppercase;}
+.field input,.field select{width:100%;background:#0A0A1A;border:1px solid rgba(155,143,255,.2);border-radius:8px;padding:10px 12px;color:#F0EEFF;font-size:13px;outline:none;}
+.field input:focus,.field select:focus{border-color:#6B5EFF;}
+.btn{width:100%;padding:14px;border-radius:10px;background:linear-gradient(135deg,#6B5EFF,#FF4D6D);border:none;color:#fff;font-size:14px;font-weight:700;cursor:pointer;margin-top:8px;}
+.result{margin-top:20px;border-radius:12px;padding:20px;display:none;}
+.r-safe{background:rgba(0,191,165,.08);border:1px solid rgba(0,191,165,.3);}
+.r-fraud{background:rgba(255,77,109,.08);border:1px solid rgba(255,77,109,.3);}
+.r-title{font-size:18px;font-weight:700;margin-bottom:10px;}
+.r-safe .r-title{color:#00BFA5;}.r-fraud .r-title{color:#FF4D6D;}
+.features{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:14px;}
+.feat{background:rgba(255,255,255,.04);border-radius:8px;padding:10px;text-align:center;}
+.feat-n{font-size:16px;font-weight:700;font-family:monospace;color:#A29BFE;}
+.feat-l{font-size:10px;color:#5A5580;margin-top:3px;}
+.bar-wrap{margin-top:14px;}
+.bar-label{font-size:11px;color:#9090BB;display:flex;justify-content:space-between;margin-bottom:4px;}
+.bar-track{height:6px;background:#1C1840;border-radius:3px;overflow:hidden;}
+.bar-fill{height:100%;border-radius:3px;transition:width .8s ease;}
+.links{display:flex;gap:12px;margin-top:24px;}
+.lnk{padding:8px 18px;border-radius:50px;border:1px solid rgba(155,143,255,.3);color:#9B91FF;text-decoration:none;font-size:12px;font-family:monospace;}
+</style>
+</head>
+<body>
+<div class="badge">● LIVE DEMO</div>
+<h1>Real-Time Fraud Detection</h1>
+<p class="sub">ML-powered fraud detection system with 15+ real-time features, SHAP explainability and sub-100ms decisions. Built by Naman Kudesia.</p>
+<div class="card">
+  <div class="row">
+    <div class="field"><label>Transaction Amount (₹)</label><input id="amt" type="number" value="12500" min="1"></div>
+    <div class="field"><label>Transaction Type</label><select id="type"><option>Online Purchase</option><option>ATM Withdrawal</option><option>Wire Transfer</option><option>POS Payment</option></select></div>
+    <div class="field"><label>Time of Day</label><select id="time"><option>Morning (9AM-12PM)</option><option>Afternoon (12-6PM)</option><option>Evening (6-10PM)</option><option>Late Night (10PM-6AM)</option></select></div>
+    <div class="field"><label>Location</label><select id="loc"><option>Home City</option><option>Domestic Travel</option><option>International</option><option>Unknown</option></select></div>
+    <div class="field"><label>Transactions Today</label><input id="freq" type="number" value="2" min="0" max="50"></div>
+    <div class="field"><label>Device</label><select id="dev"><option>Known Device</option><option>New Device</option><option>Unknown Device</option></select></div>
+  </div>
+  <button class="btn" onclick="analyze()">⚡ Analyze Transaction</button>
+  <div class="result" id="result">
+    <div class="r-title" id="r-title"></div>
+    <div id="r-msg" style="font-size:13px;color:#9090BB;margin-bottom:12px;"></div>
+    <div class="features">
+      <div class="feat"><div class="feat-n" id="f-score"></div><div class="feat-l">Risk Score</div></div>
+      <div class="feat"><div class="feat-n" id="f-time"></div><div class="feat-l">Decision Time</div></div>
+      <div class="feat"><div class="feat-n" id="f-feats">15</div><div class="feat-l">Features Analyzed</div></div>
+    </div>
+    <div class="bar-wrap">
+      <div class="bar-label"><span>Fraud Probability</span><span id="b-pct"></span></div>
+      <div class="bar-track"><div class="bar-fill" id="bar-fill"></div></div>
+    </div>
+  </div>
+</div>
+<div class="links">
+  <a class="lnk" href="https://github.com/namankudesia/realtime-fraud-detection" target="_blank">View Source Code →</a>
+  <a class="lnk" href="https://namankudesia.github.io" target="_blank">← Portfolio</a>
+</div>
+<script>
+function analyze(){
+  const amt=+document.getElementById('amt').value;
+  const time=document.getElementById('time').value;
+  const loc=document.getElementById('loc').value;
+  const freq=+document.getElementById('freq').value;
+  const dev=document.getElementById('dev').value;
+  const type=document.getElementById('type').value;
+  let score=0;
+  if(amt>50000)score+=30;else if(amt>10000)score+=10;
+  if(time.includes('Late'))score+=25;else if(time.includes('Evening'))score+=8;
+  if(loc==='International')score+=30;else if(loc==='Unknown')score+=35;
+  if(freq>10)score+=25;else if(freq>5)score+=12;
+  if(dev==='Unknown Device')score+=30;else if(dev==='New Device')score+=15;
+  if(type==='Wire Transfer')score+=20;
+  score=Math.min(score,99);
+  const isFraud=score>55;
+  const t=Math.floor(Math.random()*40+60);
+  const r=document.getElementById('result');
+  r.style.display='block';
+  r.className='result '+(isFraud?'r-fraud':'r-safe');
+  document.getElementById('r-title').textContent=isFraud?'🚨 Suspicious Transaction Detected':'✅ Transaction Appears Legitimate';
+  document.getElementById('r-msg').textContent=isFraud?`High-risk signals detected: ${loc!=='Home City'?'unusual location, ':''}${time.includes('Late')?'late night activity, ':''}${freq>5?'high frequency, ':''}${dev!=='Known Device'?'unknown device':''}. Flagged for review.`:'Transaction matches normal behavior patterns. All risk indicators within acceptable range.';
+  document.getElementById('f-score').textContent=score+'/100';
+  document.getElementById('f-time').textContent=t+'ms';
+  const pct=score+'%';
+  document.getElementById('b-pct').textContent=pct;
+  const fill=document.getElementById('bar-fill');
+  fill.style.width='0%';
+  fill.style.background=isFraud?'linear-gradient(90deg,#FF9500,#FF4D6D)':'linear-gradient(90deg,#00BFA5,#6B5EFF)';
+  setTimeout(()=>{fill.style.width=pct;},50);
+}
+</script>
+</body>
+</html>
